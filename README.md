@@ -1,2 +1,3 @@
-# blog
-Public blog to share my learnings
+## Darkm Blog
+
+This is a blog with all my learnings 
