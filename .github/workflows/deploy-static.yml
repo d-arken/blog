@@ -2,6 +2,8 @@
     push:
       branches:
         - main
+  permissions:
+    id-token: write
   jobs:
     build:
       name: "Build new release"
@@ -13,4 +15,7 @@
             node-version: '20'
         - run: npm install
         - run: npm run build
-
+        - uses: 'google-github-actions/auth@v2'
+          with:
+            project_id: 'darkmdev-blog'
+            workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github'
