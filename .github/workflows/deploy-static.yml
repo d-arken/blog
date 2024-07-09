@@ -2,10 +2,11 @@
     push:
       branches:
         - main
-  permissions:
-    id-token: write
   jobs:
     build:
+      permissions:
+        id-token: 'write'
+        contents: 'read'
       name: "Build new release"
       runs-on: "ubuntu-latest"
       steps:
@@ -23,7 +24,13 @@
               ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
         - run: npm install
         - run: npm run build
-        - uses: 'google-github-actions/auth@v2'
+        - id: 'gcp-auth'
+          uses: 'google-github-actions/auth@v2'
           with:
             project_id: 'darkmdev-blog'
             workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github'
+        - id: 'upload-dist'
+          uses: 'google-github-actions/upload-cloud-storage@v2'
+          with:
+            path: './dist'
+            destination: 'darkmdev-blog-prd'
