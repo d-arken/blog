@@ -24,6 +24,10 @@
               ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
         - run: npm install
         - run: npm run build
+        - id: 'gcp-auth'
+          uses: 'google-github-actions/auth@v2'
+          with:
+            workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github-action-blog'
         - id: 'upload-dist'
           uses: 'google-github-actions/upload-cloud-storage@v2'
           with:
