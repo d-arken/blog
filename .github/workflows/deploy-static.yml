@@ -28,6 +28,7 @@
           uses: 'google-github-actions/auth@v2'
           with:
             project_id: 'darkmdev-blog'
+            service_account: 'github@darkmdev.iam.gserviceaccount.com'
             workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github-action-blog'
         - id: 'upload-dist'
           uses: 'google-github-actions/upload-cloud-storage@v2'
