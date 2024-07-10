@@ -27,6 +27,7 @@
         - id: 'gcp-auth'
           uses: 'google-github-actions/auth@v2'
           with:
+            token_format: 'access_token'
             project_id: 'darkmdev'
             service_account: 'github@darkmdev.iam.gserviceaccount.com'
             workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github-action-blog'
