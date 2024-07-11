@@ -36,3 +36,4 @@
           with:
             path: './dist'
             destination: 'darkmdev-blog-prd'
+            parent: false
