@@ -1,6 +1,11 @@
-import Image from "next/image";
+import fs from 'fs'
+import path from "path"
 
-export default function Home() {
+async function getArticles() {
+    return fs.readdirSync("content").filter(p => path.extname(p).toLowerCase() === ".mdx")
+}
+export default async function Home() {
+  const p = await getArticles()
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
@@ -8,6 +13,8 @@ export default function Home() {
           darkm
           <code className="font-mono font-bold">dev</code>
         </p>
+
+          {p.map(p => <p key={p}>{p}</p>)}
       </div>
     </main>
   );
