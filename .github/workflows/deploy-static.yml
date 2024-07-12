@@ -22,16 +22,14 @@
               ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
         - run: bun install
         - run: bun run build
-        - name: 'gcp auth'
+        - name: 'Run gcp auth'
           uses: 'google-github-actions/auth@v2'
           with:
-            token_format: 'access_token'
-            project_id: 'darkmdev'
-            service_account: 'github@darkmdev.iam.gserviceaccount.com'
-            workload_identity_provider: 'projects/242066346830/locations/global/workloadIdentityPools/darkm-pool/providers/github-action-blog'
-        - name: 'cloud sdk'
+            service_account: ${{secrets.SVC_ACC}}
+            workload_identity_provider: ${{secrets.WORKLOAD_IDP}}
+        - name: 'Run cloud SDK'
           uses: 'google-github-actions/setup-gcloud@v2'
           with:
             version: '>= 363.0.0'
-        - name: 'sync storage'
+        - name: 'Run sync assets'
           run: 'gsutil -m rsync -R -d ./dist gs://darkm-blog-sa-prd'
