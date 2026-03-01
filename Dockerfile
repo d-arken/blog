@@ -1,13 +1,13 @@
 # Stage 1: Build
-FROM node:18-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock* bun.lockb* ./
-RUN corepack enable && yarn install --immutable || npm ci
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Serve static files with Nginx
 FROM nginx:alpine
