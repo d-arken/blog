@@ -10,7 +10,6 @@ export async function getArticles() {
 export async function getMdxModule(slug: string) {
     const file = await fs.readFile(`./content/articles/${slug}`)
     const code = await compile(file, {outputFormat: "function-body"})
-    // @ts-expect-error: `runtime` types are currently broken.
     const {default: MdxModule} = await run(code, {...runtime, baseUrl: import.meta.url})
     return MdxModule
 }

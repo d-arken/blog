@@ -14,5 +14,9 @@ type ArticleProps = {
 }
 export default async function Article({params:{slug}}: ArticleProps) {
     const MdxModule = await getMdxModule(slug)
-    return <MdxModule />
+    return (
+        <article className="prose prose-invert max-w-none w-full self-start pt-16 pb-24">
+            <MdxModule />
+        </article>
+    )
 }
