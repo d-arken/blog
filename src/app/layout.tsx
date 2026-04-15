@@ -27,6 +27,22 @@ export default function RootLayout({
 
         </div>
             {children}
+
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <footer className="mt-auto pt-16 pb-8 flex flex-col items-center gap-4 opacity-80">
+          <a href="https://github.com/d-arken" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://github-readme-stats.vercel.app/api?username=d-arken&show_icons=true&theme=tokyonight&hide_border=true&bg_color=00000000" alt="GitHub Stats" />
+          </a>
+          <a href="https://github.com/d-arken" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=d-arken&layout=compact&theme=tokyonight&hide_border=true&bg_color=00000000" alt="Top Languages" />
+          </a>
+          <a href="https://github.com/d-arken" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://github-readme-streak-stats.herokuapp.com/?user=d-arken&theme=tokyonight&hide_border=true&background=00000000" alt="GitHub Streak" />
+          </a>
+        </footer>
       </main>
       </body>
     </html>
