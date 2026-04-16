@@ -1,0 +1,90 @@
+{/* date: 2026-04-09 */}
+{/* keywords: ai, agents, docker, knowledge base, developer experience */}
+
+# Giving your org an AI mega brain
+
+What if everyone in your company could consult one brain that knows every service, every workflow, every business rule, every design decision? Not a wiki that nobody reads. A brain that actually answers questions, writes code, generates specs, and connects the dots across 20 services.
+
+That's what we built with Compose.
+
+## The setup
+
+We have 20+ microservices. Multiple databases. Event-driven workflows. Third-party integrations everywhere. The usual complexity of a real platform.
+
+Docker Compose ties all of it together locally. One command, everything runs. Hot reload across services. Profiles so you only spin up what you need.
+
+But the infrastructure orchestration is just the base layer. The interesting part is what sits on top.
+
+## The knowledge layer
+
+Every service has a structured document describing its architecture, patterns, commands, and domain context. There's a service catalog that maps relationships and dependencies between all of them.
+
+The key is progressive loading. You don't dump all 20 service contexts at once. You load only what's relevant to the task. Ask about payments? It loads the payment service context. Working across billing and invoicing? It loads both, plus their shared dependencies.
+
+This gives AI tools a working memory of the entire system without drowning in context. It knows where things live, how they connect, and why they were built that way.
+
+## AI agents with competing priorities
+
+One AI writing code is useful. Five specialized agents reviewing the same work is something else.
+
+We run a pipeline:
+
+- **Implementer** optimizes for speed and correctness
+- **Reviewer** enforces architecture and code quality
+- **Security auditor** hunts vulnerabilities against compliance requirements
+- **Test writer** covers edge cases and regressions
+
+Each agent has different priorities. The implementer wants to ship. The reviewer wants maintainability. The auditor wants to lock everything down. The test writer wants coverage.
+
+These competing perspectives catch things a single agent or single human would miss. The implementer takes a shortcut, the reviewer flags it. The reviewer approves a pattern, the auditor finds a vulnerability in it.
+
+Max two revision loops prevent infinite back-and-forth. The output is a review-ready PR, not a perfect one. Humans still make the final call.
+
+## Non-technical access
+
+This is where it gets powerful.
+
+PMs, QA, designers don't need Docker. They don't need terminal skills. They get the same AI interface connected to project management, documentation, and design tools.
+
+A PM can validate assumptions against the actual codebase. "Does our system handle this edge case?" Instead of guessing or waiting for an engineer to check, they ask the brain. It knows the code, the business rules, and the data model. Gaps in requirements surface before a single line is written, not after two weeks of implementation. That's the real value. Not faster specs. Fewer wrong specs.
+
+A designer can ask "what components already exist for this pattern?" before creating something from scratch. They can check if a color token is already in the system, if a component variant already covers their use case, or if the spacing they're proposing conflicts with what's implemented. No more designing something beautiful that engineering can't build because the component library doesn't support it. The brain knows what exists in code, not just what's in the design file.
+
+QA can ask "what happens when this field is empty?" and get an answer from the actual code, not from a spec that might be outdated. They can understand validation rules, error states, and edge cases without reading source code or waiting for an engineer to walk them through it. Test cases write themselves when you can interrogate the system directly. "What are all the ways a payment can fail?" becomes a conversation, not a two-day investigation across three services.
+
+Everyone consults the same brain. Different questions, same knowledge base.
+
+## What this actually changes
+
+Before this, domain knowledge lived in people's heads. Engineer leaves, context leaves with them. PM asks a question, engineer stops coding to answer it. New hire takes weeks to understand how services connect.
+
+Now:
+
+- Ticket to review-ready code drops from a full day to a few hours
+- Non-technical team members are self-sufficient for context gathering
+- Onboarding is a conversation, not a month of reading outdated docs
+- Security and quality checks happen automatically, not when someone remembers
+
+## The architecture decision
+
+You could build this with any orchestration tool. The choice to use Docker Compose with structured documentation and AI agents on top isn't novel. What matters is the layering.
+
+**Layer 1:** Infrastructure orchestration. Services run locally, consistently.
+
+**Layer 2:** Knowledge structure. Every service is documented in a machine-readable way.
+
+**Layer 3:** AI agents with specialized roles and competing priorities.
+
+**Layer 4:** Non-technical interfaces. Same knowledge, different entry points.
+
+Each layer works independently. You don't need AI agents to benefit from structured service docs. You don't need the non-technical layer to benefit from competing agent reviews.
+
+But stacked together, the whole org can tap into a shared understanding of the system that's always current, always available, and gets smarter as the documentation improves.
+
+## The honest trade-off
+
+This isn't free. Maintaining structured docs per service takes discipline. Agent pipelines need tuning. Context loading needs curation so it stays useful as the system grows.
+
+But the alternative is tribal knowledge, slow onboarding, and engineers being the bottleneck for every question about how the system works.
+
+Pick your cost.

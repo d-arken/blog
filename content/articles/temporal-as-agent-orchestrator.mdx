@@ -1,0 +1,102 @@
+{/* date: 2026-02-22 */}
+{/* keywords: temporal, agents, go, orchestration, reliability */}
+
+# Temporal as an agent orchestrator
+
+Agent frameworks give you a loop and hope nothing breaks. That works for demos. In production, you need durable execution, retries, visibility, and concurrency control. Temporal gives you all of that.
+
+## The real problem
+
+Most agent implementations are a while loop in a single process. Process dies, you lose everything. Rate limit hits, no clean resume. Step 7 fails, you re-run steps 1 through 6.
+
+These aren't edge cases. This is what running agents at scale looks like.
+
+## Why Temporal
+
+- **Durable state.** Workflow survives crashes, deploys, infrastructure failures. Step 4 fails, it retries step 4.
+- **Timeouts per activity.** LLM call hangs? Retries after 30s. No custom timeout logic.
+- **Full visibility.** Every execution is inspectable. Where it is, what it called, what failed.
+- **Concurrency control.** 1000 agents, 50 concurrent LLM calls. Task queue rate limiting, native.
+- **Long-running workflows.** Hours, days. No held connections, no resource consumption while waiting.
+
+## The pattern
+
+Workflow owns the loop. Activities are the side effects.
+
+```go
+func AgentWorkflow(ctx workflow.Context, input AgentInput) (AgentResult, error) {
+    messages := []Message{{Role: "system", Content: input.SystemPrompt}}
+    messages = append(messages, Message{Role: "user", Content: input.UserMessage})
+
+    for i := 0; i < input.MaxIterations; i++ {
+        var resp LLMResponse
+        err := workflow.ExecuteActivity(
+            workflow.WithActivityOptions(ctx, llmOpts),
+            CallLLM, messages,
+        ).Get(ctx, &resp)
+        if err != nil {
+            return AgentResult{}, err
+        }
+
+        if resp.Done {
+            return AgentResult{Output: resp.Content}, nil
+        }
+
+        for _, tc := range resp.ToolCalls {
+            var result ToolResult
+            err := workflow.ExecuteActivity(
+                workflow.WithActivityOptions(ctx, toolOpts),
+                ExecuteTool, tc,
+            ).Get(ctx, &result)
+            if err != nil {
+                messages = append(messages, Message{Role: "tool", Content: "Error: " + err.Error()})
+                continue
+            }
+            messages = append(messages, Message{Role: "tool", Content: result.Output})
+        }
+    }
+
+    return AgentResult{Output: "max iterations reached"}, nil
+}
+```
+
+Each `ExecuteActivity` has its own retry policy and timeout. Workflow state persists across failures.
+
+## Retry policies for LLMs
+
+```go
+var llmOpts = workflow.ActivityOptions{
+    StartToCloseTimeout: 60 * time.Second,
+    RetryPolicy: &temporal.RetryPolicy{
+        InitialInterval:        2 * time.Second,
+        BackoffCoefficient:     2.0,
+        MaximumInterval:        30 * time.Second,
+        MaximumAttempts:        5,
+        NonRetryableErrorTypes: []string{"ContentFilterError", "InvalidPromptError"},
+    },
+}
+```
+
+429s back off exponentially. Content filter errors don't retry. Different models get different timeouts.
+
+## Multi-agent coordination
+
+**Fan-out/fan-in.** Parent workflow spawns child workflows, waits or cancels after timeout.
+
+**Pipelines.** Planner, reviewer, executor. Each step isolated. Reviewer rejects? Loop back to planner without re-running everything.
+
+**Human-in-the-loop.** Temporal signals pause the workflow until an external event arrives. No polling.
+
+## Cost control
+
+Log token counts per activity. Accumulate in the workflow. Set a budget threshold, stop when you hit it. Trivial in Temporal, painful everywhere else.
+
+## Watch out for
+
+Temporal has a workflow state size limit. Long conversations with tool results get big. Move message history to an external store early. Keep only a reference in the workflow.
+
+## When to skip this
+
+Single LLM call, no tools, failure means retry from the top. You don't need Temporal for that.
+
+You need it when agents do real work at scale and silent failures cost money.

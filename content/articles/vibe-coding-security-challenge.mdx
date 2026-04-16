@@ -1,0 +1,74 @@
+{/* date: 2026-04-15 */}
+{/* keywords: security, vpn, pii, vibe coding, compliance */}
+
+# Vibe coding is here. Your security policies aren't ready.
+
+Non-engineers are building tools now. PMs spinning up internal dashboards. Marketing creating data pipelines. Sales automating their workflows. AI made this possible and the output is genuinely useful.
+
+The problem is that none of these people know what a VPN is, why PII matters, or what happens when you pipe customer data into a third-party API.
+
+This is our problem to solve.
+
+## The value is real
+
+Let me be clear. Vibe coding is net positive. People who understand the business deeply are now able to build tools that solve their own problems. No ticket, no sprint planning, no two-week wait. They just build it.
+
+The tools they create often fit the actual need better than what engineering would have spec'd. They know the edge cases. They know the workflow. They know what data matters.
+
+Blocking this would be stupid. Ignoring the risks would be worse.
+
+## What goes wrong
+
+**PII leaks.** Someone builds a customer lookup tool. It pulls names, emails, phone numbers, addresses. It works great. It also sends every query to an LLM API. Customer data is now sitting on a third-party server with no DPA, no retention policy, no encryption in transit guarantee.
+
+**No network boundaries.** The tool connects directly to the production database. No VPN, no bastion, no read replica. One bad query and production is degraded. One leaked connection string and the database is exposed.
+
+**Secrets in code.** API keys hardcoded. Database credentials in a .env file committed to a public repo. Tokens with admin scope when read-only would do.
+
+**No audit trail.** Who accessed what data, when, and why? Nobody knows. The tool doesn't log anything. When compliance asks, you have nothing.
+
+**Dependency chaos.** The AI suggested a package that hasn't been updated in three years. It pulls in 40 transitive dependencies. One of them has a known CVE. Nobody checked.
+
+These aren't hypothetical. These are happening right now in companies that haven't adapted their security posture to this new reality.
+
+## What engineers need to build
+
+We can't review every tool that every team builds. That doesn't scale. What scales is infrastructure that makes the secure path the easy path.
+
+**Managed connections.** Don't let people build their own database connections. Provide a pre-configured internal SDK or API that handles auth, routing, and permissions. Instead of handing someone a PostgreSQL connection string, give them an endpoint like `internal-api.company.com/customers?fields=id,plan,signup_date`. It enforces read-only access, filters out sensitive columns, and routes through a read replica. They get the data. They never see a password.
+
+**PII-aware data layers.** Most internal tools need patterns, not real data. Build your APIs to mask by default. A churn analysis tool gets `user_id: abc123, email: m***@***.com, plan: pro`. Enough to analyze, not enough to identify anyone. Unmasked data requires an approval flow with audit logging.
+
+**Tailscale instead of traditional VPNs.** A classic VPN gives you an all-or-nothing tunnel. Tailscale flips this. Each user and server gets an identity, and ACLs define who can reach what. Marketing gets access to the analytics API on port 443. That's it. No production database, no admin panel. Someone leaves, remove them from the group, every connection dies. No shared passwords to rotate.
+
+**Template repositories.** When someone asks AI to "build me a dashboard," the AI doesn't know your security requirements. Give teams a starter template with secret detection, dependency scanning, auth middleware, and logging baked in. The vibe coder starts from a secure baseline without thinking about it.
+
+**LLM guardrails.** Route AI API calls through an internal proxy that strips PII before it leaves your network. Someone summarizes support tickets with Claude? The proxy removes customer emails and phone numbers from the prompt first. Log everything.
+
+**Built-in security skills.** This is the part that actually scales. Instead of reviewing every tool manually, give coders a command they run before shipping. A security scan skill that analyzes their code and generates a report: hardcoded secrets, exposed PII fields, missing auth, dangerous dependencies. The report is actionable, not a wall of CVEs. Fix these three things, you're clear.
+
+Same approach for resource access. Need a database connection? Run the access request skill. It identifies what you need, checks your role, and provisions the right level of access through the managed layer. No Slack messages to engineering. No waiting. No overprivileged credentials because someone copy-pasted a connection string from a coworker.
+
+The skills meet people where they are. Inside their AI coding tool. Not in a wiki they'll never read.
+
+## Policy changes
+
+Technical controls aren't enough. You need policies that acknowledge this new reality.
+
+**Data classification.** Every dataset needs a classification. Public, internal, confidential, restricted. Vibe coders should know which category they're working with and what rules apply.
+
+**Tool registration.** If you build something that accesses company data, it goes in a registry. Not for approval. For visibility. So when a breach happens, you know what exists and what it touches.
+
+**Security training that actually fits.** A 2-hour SOC2 compliance course won't help a PM who just wants to build a dashboard. Short, specific guidance: don't hardcode secrets, don't send customer data to external APIs, use the provided database connections. Five minutes. Practical.
+
+**Incident response that includes internal tools.** Your incident playbook probably assumes all production code went through CI/CD. That's no longer true. Internal tools built by non-engineers need to be in scope.
+
+## The engineering responsibility
+
+This isn't about gatekeeping. It's about building the infrastructure and guardrails that let the whole company build safely.
+
+The value of vibe coding comes from removing friction. If our security controls add so much friction that people go around them, we failed. The controls need to be invisible. Secure defaults. Managed connections. PII redaction built into the data layer.
+
+Engineers who see this as someone else's problem are going to have a bad time when the first PII leak traces back to a marketing automation tool that nobody in engineering knew existed.
+
+Own the platform. Let them build. Make it safe by default.

@@ -1,0 +1,97 @@
+{/* date: 2026-03-11 */}
+{/* keywords: postgresql, performance, indexing, lambda, aws */}
+
+# Small query changes, big infrastructure savings
+
+Most database performance problems don't need a bigger instance. They need a better query.
+
+I've seen teams throw money at RDS upgrades, read replicas, and caching layers when the real fix was a missing index or a poorly written JOIN.
+
+## Start with EXPLAIN
+
+Before optimizing anything, look at the execution plan.
+
+```sql
+EXPLAIN ANALYZE
+SELECT o.id, o.total, c.name
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE o.created_at > now() - interval '30 days'
+AND o.status = 'completed';
+```
+
+Sequential scan on millions of rows? That's your problem. Not the hardware.
+
+## Indexes that matter
+
+Don't add indexes randomly. Every index costs write performance and storage.
+
+**Composite indexes.** Filtering by `status` and `created_at` together? One composite index beats two separate ones. Equality first, range second.
+
+```sql
+CREATE INDEX idx_orders_status_created ON orders (status, created_at);
+```
+
+**Covering indexes.** Query only needs a few columns? Include them. PostgreSQL answers from the index without touching the table.
+
+```sql
+CREATE INDEX idx_orders_covering ON orders (status, created_at) INCLUDE (total);
+```
+
+**Partial indexes.** 90% of queries filter `status = 'active'`? Don't index the rest.
+
+```sql
+CREATE INDEX idx_orders_active ON orders (created_at) WHERE status = 'active';
+```
+
+## N+1 queries
+
+Fetch 100 orders, loop to fetch each customer. 101 database calls. Fix with a JOIN or batch query. 2-second endpoint becomes 50ms.
+
+## SELECT *
+
+Select what you need. Wide rows with JSON blobs destroy throughput. The database reads entire rows from disk even for an ID and a timestamp.
+
+## Pagination
+
+`OFFSET 10000 LIMIT 20` reads and discards 10,000 rows. Use cursor-based pagination.
+
+```sql
+SELECT id, total, created_at
+FROM orders
+WHERE created_at < '2026-03-01T10:00:00Z'
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+Constant performance regardless of depth.
+
+## Connection pools and Lambdas don't mix
+
+Connection pooling is essential for database performance. Opening a new connection is expensive: TCP handshake, TLS negotiation, authentication, memory allocation on the server.
+
+The problem is that Lambda functions don't fit this model at all.
+
+Every Lambda invocation is potentially a new execution environment. Cold starts mean new connections. Warm containers hold connections that may be stale or already closed by the server. Scale to 500 concurrent Lambdas and you have 500 connections hitting your database, each opened independently, with no shared pool.
+
+PostgreSQL has a hard limit on connections. Default is 100. Even with `max_connections` cranked up, each connection consumes memory on the server. 500 Lambda connections on a db.t3.medium will choke it.
+
+**RDS Proxy** is AWS's answer to this. It sits between Lambda and the database, managing a connection pool server-side. Lambda connects to the proxy, the proxy multiplexes to a smaller set of real database connections.
+
+It works. But it adds latency, costs money, and introduces another failure point. You're paying to solve a problem that exists because the compute model doesn't match the database model.
+
+**The real question** is whether Lambda is the right choice when you have heavy database access. If every invocation needs a database connection, you're fighting the architecture. A long-running service with a proper connection pool (ECS, EKS, EC2) handles this natively. No proxy, no cold start connection overhead, no connection explosion.
+
+Lambda is great for event-driven, stateless work. Queue processing, webhook handlers, image transforms. But for request-heavy workloads with database dependencies, the connection management tax is real and ongoing.
+
+Pick the compute model that fits the access pattern. Don't bolt on infrastructure to make a mismatch work.
+
+## Monitor your queries
+
+Turn on `pg_stat_statements`. Sort by total time. Top 5 queries are eating your database alive. Optimize by data, not gut feeling.
+
+## The point
+
+Proper indexes, efficient queries, smart pagination, the right compute model for database access. Simple moves that compound into massive savings.
+
+The expensive instance is almost never the answer.
