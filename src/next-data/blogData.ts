@@ -34,6 +34,7 @@ export async function getArticles(): Promise<Article[]> {
 export async function getMdxModule(slug: string) {
     const file = await fs.readFile(`./content/articles/${slug}`)
     const code = await compile(file, {outputFormat: "function-body"})
+    // @ts-expect-error: runtime types mismatch between mdx and react
     const {default: MdxModule} = await run(code, {...runtime, baseUrl: import.meta.url})
     return MdxModule
 }
